@@ -113,14 +113,27 @@
         // Инициализация модели Stable Diffusion
         let model;
         async function loadModel() {
-            model = await stableDiffusion.StableDiffusion.create();
+            try {
+                model = await stableDiffusion.StableDiffusion.create();
+                console.log("Модель загружена!");
+            } catch (error) {
+                console.error("Ошибка загрузки модели:", error);
+                alert("Не удалось загрузить модель. Проверьте подключение к интернету.");
+            }
         }
 
         // Функция для генерации изображения по тексту
         async function generateImageFromText(text) {
-            const imageTensor = await model.generateImage(text);
-            const imageUrl = await tf.browser.toPixels(imageTensor);
-            return imageUrl;
+            try {
+                const imageTensor = await model.generateImage(text);
+                const canvas = document.createElement('canvas');
+                await tf.browser.toPixels(imageTensor, canvas);
+                return canvas.toDataURL('image/png');
+            } catch (error) {
+                console.error("Ошибка генерации изображения:", error);
+                alert("Не удалось сгенерировать изображение. Попробуйте ещё раз.");
+                return null;
+            }
         }
 
         // Функция для скачивания изображения
@@ -140,26 +153,30 @@
 
                 const imageUrl = await generateImageFromText(inputText);
 
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('generatedImage').src = imageUrl;
-                document.getElementById('imageContainer').style.display = 'block';
-
-                // Обработка скачивания
-                document.getElementById('downloadButton').addEventListener('click', () => {
-                    downloadImage(imageUrl, 'generated-image.png');
-                });
-
-                // Обработка повторной генерации
-                document.getElementById('regenerateButton').addEventListener('click', async () => {
-                    document.getElementById('loading').style.display = 'block';
-                    document.getElementById('imageContainer').style.display = 'none';
-
-                    const newImageUrl = await generateImageFromText(inputText);
-
+                if (imageUrl) {
                     document.getElementById('loading').style.display = 'none';
-                    document.getElementById('generatedImage').src = newImageUrl;
+                    document.getElementById('generatedImage').src = imageUrl;
                     document.getElementById('imageContainer').style.display = 'block';
-                });
+
+                    // Обработка скачивания
+                    document.getElementById('downloadButton').onclick = () => {
+                        downloadImage(imageUrl, 'generated-image.png');
+                    };
+
+                    // Обработка повторной генерации
+                    document.getElementById('regenerateButton').onclick = async () => {
+                        document.getElementById('loading').style.display = 'block';
+                        document.getElementById('imageContainer').style.display = 'none';
+
+                        const newImageUrl = await generateImageFromText(inputText);
+
+                        if (newImageUrl) {
+                            document.getElementById('loading').style.display = 'none';
+                            document.getElementById('generatedImage').src = newImageUrl;
+                            document.getElementById('imageContainer').style.display = 'block';
+                        }
+                    };
+                }
             } else {
                 alert('Пожалуйста, введите описание изображения.');
             }
