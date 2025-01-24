@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Улучшенный ИИ</title>
+    <title>Генератор изображений</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
+            background-color: #1e1e1e;
+            color: #ffffff;
             margin: 0;
             padding: 0;
             display: flex;
@@ -18,7 +18,7 @@
             flex-direction: column;
         }
         .container {
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -30,140 +30,146 @@
             font-size: 24px;
             margin-bottom: 20px;
         }
-        #chat {
-            height: 300px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        #inputText {
+            width: calc(100% - 40px);
             padding: 10px;
-            overflow-y: auto;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #3d3d3d;
+            color: #ffffff;
             margin-bottom: 10px;
-            text-align: left;
-            background-color: #fafafa;
         }
-        #userInput {
-            width: calc(100% - 90px);
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        #sendButton {
+        #generateButton {
             padding: 10px 20px;
             background-color: #007BFF;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-bottom: 20px;
         }
-        #sendButton:hover {
+        #generateButton:hover {
             background-color: #0056b3;
         }
-        .message {
-            margin-bottom: 10px;
+        #loading {
+            display: none;
+            font-size: 18px;
+            margin-bottom: 20px;
         }
-        .user {
-            color: #007BFF;
-            font-weight: bold;
+        #imageContainer {
+            display: none;
+            margin-bottom: 20px;
         }
-        .ai {
-            color: #28a745;
-            font-weight: bold;
+        #generatedImage {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+        #downloadButton {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        #downloadButton:hover {
+            background-color: #218838;
+        }
+        #regenerateButton {
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #regenerateButton:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Улучшенный ИИ</h1>
-        <div id="chat"></div>
-        <input type="text" id="userInput" placeholder="Напишите что-нибудь...">
-        <button id="sendButton">Отправить</button>
+        <h1>Генератор изображений по тексту</h1>
+        <input type="text" id="inputText" placeholder="Введите описание изображения...">
+        <button id="generateButton">Сгенерировать</button>
+        <div id="loading">Генерация изображения...</div>
+        <div id="imageContainer">
+            <img id="generatedImage" src="" alt="Сгенерированное изображение">
+            <div>
+                <button id="downloadButton">Скачать</button>
+                <button id="regenerateButton">Сгенерировать другое</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Подключаем TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script>
-        // База знаний для ИИ
-        let knowledgeBase = {};
+        // Функция для генерации псевдоизображения
+        function generateImageFromText(text) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 400;
+                    canvas.height = 400;
+                    const ctx = canvas.getContext('2d');
 
-        // Контекст разговора
-        let conversationContext = [];
+                    // Очистка холста
+                    ctx.fillStyle = '#3d3d3d';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Функция для обучения ИИ
-        function learnFromConversation(userMessage, aiResponse) {
-            const words = userMessage.toLowerCase().split(" ");
-            words.forEach(word => {
-                if (!knowledgeBase[word]) {
-                    knowledgeBase[word] = [];
-                }
-                knowledgeBase[word].push(aiResponse);
+                    // Добавление текста на изображение
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+                    // Преобразование canvas в URL изображения
+                    const imageUrl = canvas.toDataURL('image/png');
+                    resolve(imageUrl);
+                }, 2000); // Имитация задержки генерации
             });
-            localStorage.setItem("knowledgeBase", JSON.stringify(knowledgeBase)); // Сохраняем в localStorage
         }
 
-        // Функция для генерации ответа с учётом контекста
-        function generateResponse(userMessage) {
-            const words = userMessage.toLowerCase().split(" ");
-            let possibleResponses = [];
+        // Функция для скачивания изображения
+        function downloadImage(imageUrl, filename) {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = filename;
+            link.click();
+        }
 
-            // Поиск ответов на основе ключевых слов
-            words.forEach(word => {
-                if (knowledgeBase[word]) {
-                    possibleResponses = possibleResponses.concat(knowledgeBase[word]);
-                }
-            });
+        // Обработка нажатия кнопки "Сгенерировать"
+        document.getElementById('generateButton').addEventListener('click', async () => {
+            const inputText = document.getElementById('inputText').value.trim();
+            if (inputText) {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('imageContainer').style.display = 'none';
 
-            // Учёт контекста разговора
-            conversationContext.forEach(context => {
-                const contextWords = context.toLowerCase().split(" ");
-                contextWords.forEach(word => {
-                    if (knowledgeBase[word]) {
-                        possibleResponses = possibleResponses.concat(knowledgeBase[word]);
-                    }
+                const imageUrl = await generateImageFromText(inputText);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('generatedImage').src = imageUrl;
+                document.getElementById('imageContainer').style.display = 'block';
+
+                // Обработка скачивания
+                document.getElementById('downloadButton').addEventListener('click', () => {
+                    downloadImage(imageUrl, 'generated-image.png');
                 });
-            });
 
-            if (possibleResponses.length > 0) {
-                return possibleResponses[Math.floor(Math.random() * possibleResponses.length)];
+                // Обработка повторной генерации
+                document.getElementById('regenerateButton').addEventListener('click', async () => {
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('imageContainer').style.display = 'none';
+
+                    const newImageUrl = await generateImageFromText(inputText);
+
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('generatedImage').src = newImageUrl;
+                    document.getElementById('imageContainer').style.display = 'block';
+                });
             } else {
-                return "Я ещё не знаю, как на это ответить. Можете объяснить?";
-            }
-        }
-
-        // Функция для добавления сообщения в чат
-        function addMessageToChat(sender, message) {
-            const chat = document.getElementById("chat");
-            const messageElement = document.createElement("div");
-            messageElement.classList.add("message");
-            messageElement.innerHTML = `<span class="${sender}">${sender}:</span> ${message}`;
-            chat.appendChild(messageElement);
-            chat.scrollTop = chat.scrollHeight; // Прокрутка вниз
-        }
-
-        // Загрузка базы знаний из localStorage
-        if (localStorage.getItem("knowledgeBase")) {
-            knowledgeBase = JSON.parse(localStorage.getItem("knowledgeBase"));
-        }
-
-        // Обработка отправки сообщения
-        document.getElementById("sendButton").addEventListener("click", () => {
-            const userInput = document.getElementById("userInput");
-            const userMessage = userInput.value.trim();
-            if (userMessage) {
-                addMessageToChat("user", userMessage);
-                conversationContext.push(userMessage); // Добавляем в контекст
-
-                const aiResponse = generateResponse(userMessage);
-                addMessageToChat("ai", aiResponse);
-                learnFromConversation(userMessage, aiResponse); // Обучение ИИ
-
-                userInput.value = ""; // Очистка поля ввода
-            }
-        });
-
-        // Обработка нажатия Enter
-        document.getElementById("userInput").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                document.getElementById("sendButton").click();
+                alert('Пожалуйста, введите описание изображения.');
             }
         });
     </script>
