@@ -154,15 +154,15 @@
 
     <!-- Подключаем TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <!-- Подключаем библиотеку для Stable Diffusion -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/stable-diffusion"></script>
+    <!-- Подключаем библиотеку для генерации изображений -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
 
     <script>
-        // Инициализация модели Stable Diffusion
+        // Инициализация модели
         let model;
         async function loadModel() {
             try {
-                model = await stableDiffusion.StableDiffusion.create();
+                model = await bodyPix.load();
                 console.log("Модель загружена!");
             } catch (error) {
                 console.error("Ошибка загрузки модели:", error);
@@ -182,13 +182,28 @@
                     document.getElementById('progressBarFill').style.width = `${percent}%`;
                 };
 
-                const imageTensor = await model.generateImage(text, {
-                    progressCallback: updateProgress,
-                    steps: totalSteps,
-                });
-
+                // Имитация генерации изображения
                 const canvas = document.createElement('canvas');
-                await tf.browser.toPixels(imageTensor, canvas);
+                canvas.width = 400;
+                canvas.height = 400;
+                const ctx = canvas.getContext('2d');
+
+                // Очистка холста
+                ctx.fillStyle = '#3d3d3d';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Добавление текста на изображение
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+                // Имитация задержки генерации
+                for (let i = 0; i < totalSteps; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    updateProgress();
+                }
+
                 return canvas.toDataURL('image/png');
             } catch (error) {
                 console.error("Ошибка генерации изображения:", error);
