@@ -14,7 +14,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             flex-direction: column;
             overflow: hidden;
         }
@@ -23,7 +23,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
+            width: 90%;
             max-width: 500px;
             text-align: center;
             position: relative;
@@ -41,6 +41,7 @@
             background-color: #3d3d3d;
             color: #ffffff;
             margin-bottom: 10px;
+            font-size: 16px;
         }
         #generateButton {
             padding: 10px 20px;
@@ -51,6 +52,7 @@
             cursor: pointer;
             margin-bottom: 20px;
             transition: background-color 0.3s ease;
+            font-size: 16px;
         }
         #generateButton:hover {
             background-color: #0056b3;
@@ -98,6 +100,7 @@
             cursor: pointer;
             margin-right: 10px;
             transition: background-color 0.3s ease;
+            font-size: 16px;
         }
         #downloadButton:hover {
             background-color: #218838;
@@ -110,6 +113,7 @@
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            font-size: 16px;
         }
         #regenerateButton:hover {
             background-color: #c82333;
@@ -152,24 +156,7 @@
         Разработано: <a href="https://github.com/AjinCry" target="_blank">AjinCry.Cn X</a>
     </div>
 
-    <!-- Подключаем TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <!-- Подключаем библиотеку для генерации изображений -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
-
     <script>
-        // Инициализация модели
-        let model;
-        async function loadModel() {
-            try {
-                model = await bodyPix.load();
-                console.log("Модель загружена!");
-            } catch (error) {
-                console.error("Ошибка загрузки модели:", error);
-                alert("Не удалось загрузить модель. Проверьте подключение к интернету.");
-            }
-        }
-
         // Функция для генерации изображения по тексту
         async function generateImageFromText(text) {
             try {
@@ -261,9 +248,6 @@
                 alert('Пожалуйста, введите описание изображения.');
             }
         });
-
-        // Загрузка модели при запуске
-        loadModel();
     </script>
 </body>
 </html>
