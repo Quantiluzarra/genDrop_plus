@@ -3,93 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Улучшение фотографий с ИИ</title>
+    <title>Обучающийся ИИ</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
             text-align: center;
-            margin: 50px;
         }
-        #imageInput {
-            display: none;
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
         }
-        #uploadButton {
+        #chat {
+            height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            text-align: left;
+            background-color: #fafafa;
+        }
+        #userInput {
+            width: calc(100% - 90px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        #sendButton {
             padding: 10px 20px;
             background-color: #007BFF;
             color: white;
             border: none;
-            cursor: pointer;
             border-radius: 5px;
+            cursor: pointer;
         }
-        #uploadButton:hover {
+        #sendButton:hover {
             background-color: #0056b3;
         }
-        #imageContainer {
-            margin-top: 20px;
+        .message {
+            margin-bottom: 10px;
         }
-        #processedImage {
-            max-width: 100%;
-            height: auto;
+        .user {
+            color: #007BFF;
+            font-weight: bold;
+        }
+        .ai {
+            color: #28a745;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>Улучшение фотографий с ИИ</h1>
-    <p>Загрузите фотографию, и ИИ улучшит её качество.</p>
-
-    <label for="imageInput" id="uploadButton">Загрузить фото</label>
-    <input type="file" id="imageInput" accept="image/*">
-
-    <div id="imageContainer">
-        <img id="processedImage" src="" alt="Обработанное изображение">
+    <div class="container">
+        <h1>Обучающийся ИИ</h1>
+        <div id="chat"></div>
+        <input type="text" id="userInput" placeholder="Напишите что-нибудь...">
+        <button id="sendButton">Отправить</button>
     </div>
 
-    <!-- Подключаем TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script>
-        // Загрузка модели (пример модели для улучшения изображений)
-        async function loadModel() {
-            const model = await tf.loadGraphModel('https://tfhub.dev/google/tfjs-model/esrgan-tf2/1/default/1');
-            return model;
+        // База знаний для ИИ
+        let knowledgeBase = {};
+
+        // Функция для обучения ИИ
+        function learnFromConversation(userMessage, aiResponse) {
+            const words = userMessage.toLowerCase().split(" ");
+            words.forEach(word => {
+                if (!knowledgeBase[word]) {
+                    knowledgeBase[word] = [];
+                }
+                knowledgeBase[word].push(aiResponse);
+            });
+            localStorage.setItem("knowledgeBase", JSON.stringify(knowledgeBase)); // Сохраняем в localStorage
         }
 
-        // Обработка изображения
-        async function processImage(image) {
-            const model = await loadModel();
-            const tensor = tf.browser.fromPixels(image)
-                .resizeNearestNeighbor([256, 256]) // Изменение размера для модели
-                .toFloat()
-                .div(tf.scalar(255.0))
-                .expandDims();
-
-            // Улучшение изображения с помощью модели
-            const enhancedTensor = await model.predict(tensor);
-            const processedImage = await tf.browser.toPixels(enhancedTensor.squeeze());
-
-            // Создание canvas для отображения результата
-            const canvas = document.createElement('canvas');
-            canvas.width = image.width;
-            canvas.height = image.height;
-            const ctx = canvas.getContext('2d');
-            ctx.putImageData(new ImageData(processedImage, image.width, image.height), 0, 0);
-
-            return canvas.toDataURL();
+        // Функция для генерации ответа
+        function generateResponse(userMessage) {
+            const words = userMessage.toLowerCase().split(" ");
+            let possibleResponses = [];
+            words.forEach(word => {
+                if (knowledgeBase[word]) {
+                    possibleResponses = possibleResponses.concat(knowledgeBase[word]);
+                }
+            });
+            if (possibleResponses.length > 0) {
+                return possibleResponses[Math.floor(Math.random() * possibleResponses.length)];
+            } else {
+                return "Я ещё не знаю, как на это ответить. Можете объяснить?";
+            }
         }
 
-        // Обработка загруженного изображения
-        document.getElementById('imageInput').addEventListener('change', async (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = async () => {
-                        const processedImageSrc = await processImage(img);
-                        document.getElementById('processedImage').src = processedImageSrc;
-                    };
-                };
-                reader.readAsDataURL(file);
+        // Функция для добавления сообщения в чат
+        function addMessageToChat(sender, message) {
+            const chat = document.getElementById("chat");
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message");
+            messageElement.innerHTML = `<span class="${sender}">${sender}:</span> ${message}`;
+            chat.appendChild(messageElement);
+            chat.scrollTop = chat.scrollHeight; // Прокрутка вниз
+        }
+
+        // Загрузка базы знаний из localStorage
+        if (localStorage.getItem("knowledgeBase")) {
+            knowledgeBase = JSON.parse(localStorage.getItem("knowledgeBase"));
+        }
+
+        // Обработка отправки сообщения
+        document.getElementById("sendButton").addEventListener("click", () => {
+            const userInput = document.getElementById("userInput");
+            const userMessage = userInput.value.trim();
+            if (userMessage) {
+                addMessageToChat("user", userMessage);
+                const aiResponse = generateResponse(userMessage);
+                addMessageToChat("ai", aiResponse);
+                learnFromConversation(userMessage, aiResponse); // Обучение ИИ
+                userInput.value = ""; // Очистка поля ввода
+            }
+        });
+
+        // Обработка нажатия Enter
+        document.getElementById("userInput").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                document.getElementById("sendButton").click();
             }
         });
     </script>
