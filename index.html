@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генератор изображений</title>
+    <title>Генератор изображений по тексту</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -104,31 +104,23 @@
         </div>
     </div>
 
+    <!-- Подключаем TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <!-- Подключаем библиотеку для Stable Diffusion -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/stable-diffusion"></script>
+
     <script>
-        // Функция для генерации псевдоизображения
-        function generateImageFromText(text) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 400;
-                    canvas.height = 400;
-                    const ctx = canvas.getContext('2d');
+        // Инициализация модели Stable Diffusion
+        let model;
+        async function loadModel() {
+            model = await stableDiffusion.StableDiffusion.create();
+        }
 
-                    // Очистка холста
-                    ctx.fillStyle = '#3d3d3d';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                    // Добавление текста на изображение
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = '20px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-
-                    // Преобразование canvas в URL изображения
-                    const imageUrl = canvas.toDataURL('image/png');
-                    resolve(imageUrl);
-                }, 2000); // Имитация задержки генерации
-            });
+        // Функция для генерации изображения по тексту
+        async function generateImageFromText(text) {
+            const imageTensor = await model.generateImage(text);
+            const imageUrl = await tf.browser.toPixels(imageTensor);
+            return imageUrl;
         }
 
         // Функция для скачивания изображения
@@ -172,6 +164,9 @@
                 alert('Пожалуйста, введите описание изображения.');
             }
         });
+
+        // Загрузка модели при запуске
+        loadModel();
     </script>
 </body>
 </html>
