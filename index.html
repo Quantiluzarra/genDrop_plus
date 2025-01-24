@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Чат с ИИ</title>
+    <title>Улучшенный ИИ</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -73,7 +73,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Чат с ИИ</h1>
+        <h1>Улучшенный ИИ</h1>
         <div id="chat"></div>
         <input type="text" id="userInput" placeholder="Напишите что-нибудь...">
         <button id="sendButton">Отправить</button>
@@ -82,34 +82,51 @@
     <!-- Подключаем TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script>
-        // Создаём простую модель нейронной сети
-        const model = tf.sequential();
-        model.add(tf.layers.dense({ units: 128, inputShape: [100], activation: 'relu' }));
-        model.add(tf.layers.dense({ units: 64, activation: 'relu' }));
-        model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
-        model.add(tf.layers.dense({ units: 16, activation: 'relu' }));
-        model.add(tf.layers.dense({ units: 8, activation: 'softmax' }));
+        // База знаний для ИИ
+        let knowledgeBase = {};
 
-        // Компилируем модель
-        model.compile({ optimizer: 'adam', loss: 'categoricalCrossentropy' });
+        // Контекст разговора
+        let conversationContext = [];
 
-        // Функция для преобразования текста в числовой вектор
-        function textToVector(text) {
-            const vector = new Array(100).fill(0);
-            for (let i = 0; i < Math.min(text.length, 100); i++) {
-                vector[i] = text.charCodeAt(i) / 255; // Нормализация символов
-            }
-            return vector;
+        // Функция для обучения ИИ
+        function learnFromConversation(userMessage, aiResponse) {
+            const words = userMessage.toLowerCase().split(" ");
+            words.forEach(word => {
+                if (!knowledgeBase[word]) {
+                    knowledgeBase[word] = [];
+                }
+                knowledgeBase[word].push(aiResponse);
+            });
+            localStorage.setItem("knowledgeBase", JSON.stringify(knowledgeBase)); // Сохраняем в localStorage
         }
 
-        // Функция для генерации ответа
+        // Функция для генерации ответа с учётом контекста
         function generateResponse(userMessage) {
-            const inputVector = textToVector(userMessage);
-            const inputTensor = tf.tensor2d([inputVector]);
-            const outputTensor = model.predict(inputTensor);
-            const outputArray = outputTensor.arraySync()[0];
-            const response = outputArray.map(value => String.fromCharCode(Math.round(value * 255))).join("");
-            return response;
+            const words = userMessage.toLowerCase().split(" ");
+            let possibleResponses = [];
+
+            // Поиск ответов на основе ключевых слов
+            words.forEach(word => {
+                if (knowledgeBase[word]) {
+                    possibleResponses = possibleResponses.concat(knowledgeBase[word]);
+                }
+            });
+
+            // Учёт контекста разговора
+            conversationContext.forEach(context => {
+                const contextWords = context.toLowerCase().split(" ");
+                contextWords.forEach(word => {
+                    if (knowledgeBase[word]) {
+                        possibleResponses = possibleResponses.concat(knowledgeBase[word]);
+                    }
+                });
+            });
+
+            if (possibleResponses.length > 0) {
+                return possibleResponses[Math.floor(Math.random() * possibleResponses.length)];
+            } else {
+                return "Я ещё не знаю, как на это ответить. Можете объяснить?";
+            }
         }
 
         // Функция для добавления сообщения в чат
@@ -122,14 +139,23 @@
             chat.scrollTop = chat.scrollHeight; // Прокрутка вниз
         }
 
+        // Загрузка базы знаний из localStorage
+        if (localStorage.getItem("knowledgeBase")) {
+            knowledgeBase = JSON.parse(localStorage.getItem("knowledgeBase"));
+        }
+
         // Обработка отправки сообщения
         document.getElementById("sendButton").addEventListener("click", () => {
             const userInput = document.getElementById("userInput");
             const userMessage = userInput.value.trim();
             if (userMessage) {
                 addMessageToChat("user", userMessage);
+                conversationContext.push(userMessage); // Добавляем в контекст
+
                 const aiResponse = generateResponse(userMessage);
                 addMessageToChat("ai", aiResponse);
+                learnFromConversation(userMessage, aiResponse); // Обучение ИИ
+
                 userInput.value = ""; // Очистка поля ввода
             }
         });
