@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Улучшение фотографий с ИИ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        #imageInput {
+            display: none;
+        }
+        #uploadButton {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #uploadButton:hover {
+            background-color: #0056b3;
+        }
+        #imageContainer {
+            margin-top: 20px;
+        }
+        #processedImage {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Улучшение фотографий с ИИ</h1>
+    <p>Загрузите фотографию, и ИИ улучшит её качество.</p>
+
+    <label for="imageInput" id="uploadButton">Загрузить фото</label>
+    <input type="file" id="imageInput" accept="image/*">
+
+    <div id="imageContainer">
+        <img id="processedImage" src="" alt="Обработанное изображение">
+    </div>
+
+    <!-- Подключаем TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script>
+        // Загрузка модели (пример модели для улучшения изображений)
+        async function loadModel() {
+            const model = await tf.loadGraphModel('https://tfhub.dev/google/tfjs-model/esrgan-tf2/1/default/1');
+            return model;
+        }
+
+        // Обработка изображения
+        async function processImage(image) {
+            const model = await loadModel();
+            const tensor = tf.browser.fromPixels(image)
+                .resizeNearestNeighbor([256, 256]) // Изменение размера для модели
+                .toFloat()
+                .div(tf.scalar(255.0))
+                .expandDims();
+
+            // Улучшение изображения с помощью модели
+            const enhancedTensor = await model.predict(tensor);
+            const processedImage = await tf.browser.toPixels(enhancedTensor.squeeze());
+
+            // Создание canvas для отображения результата
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const ctx = canvas.getContext('2d');
+            ctx.putImageData(new ImageData(processedImage, image.width, image.height), 0, 0);
+
+            return canvas.toDataURL();
+        }
+
+        // Обработка загруженного изображения
+        document.getElementById('imageInput').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = async () => {
+                        const processedImageSrc = await processImage(img);
+                        document.getElementById('processedImage').src = processedImageSrc;
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
